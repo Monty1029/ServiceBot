@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
 using Microsoft.Bot.Connector;
-using Microsoft.Bot.Connector.Utilities;
+using Microsoft.Bot.Builder;
 using Newtonsoft.Json;
+using Microsoft.Bot.Builder.Dialogs;
 
 namespace ServiceBot
 {
@@ -26,7 +27,8 @@ namespace ServiceBot
                 int length = (message.Text ?? string.Empty).Length;
 
                 // return our reply to the user
-                return message.CreateReplyMessage($"You sent {length} characters");
+                EchoDialog echo = new EchoDialog();
+                return await Conversation.SendAsync(message, () => echo);
             }
             else
             {
@@ -49,9 +51,11 @@ namespace ServiceBot
             }
             else if (message.Type == "BotAddedToConversation")
             {
+                return message.CreateReplyMessage($"ServiceBot has joined the conversation. Type /edit to begin or /help for a list of commands.");
             }
             else if (message.Type == "BotRemovedFromConversation")
             {
+                return message.CreateReplyMessage($"ServiceBot has left the conversation.");
             }
             else if (message.Type == "UserAddedToConversation")
             {
@@ -64,6 +68,45 @@ namespace ServiceBot
             }
 
             return null;
+        }
+    }
+
+    [Serializable]
+    public class EchoDialog : IDialog<object>
+    {
+        public async Task StartAsync(IDialogContext context)
+        {
+            context.Wait(MessageReceivedAsync);
+        }
+        public async Task MessageReceivedAsync(IDialogContext context, IAwaitable<Message> argument)
+        {
+            var message = await argument;
+            if (message.Text.Contains("/edit"))
+            {
+                PromptDialog.Confirm(
+                    context, //context
+                    AfterResetAsync, //resume handler
+                    "Would you like to modify your profile?", //prompt to show to the user
+                    "Sorry, I don't understand."); //what to show on retry
+            }
+            else
+            {
+                await context.PostAsync(string.Format("You said: {0}", message.Text));
+                context.Wait(MessageReceivedAsync);
+            }
+        }
+        public async Task AfterResetAsync(IDialogContext context, IAwaitable<bool> argument)
+        {
+            var confirm = await argument;
+            if (confirm)
+            {
+                await context.PostAsync("What would you like to modify?");
+            }
+            else
+            {
+                await context.PostAsync("Okay, enjoy your time on the forum.");
+            }
+            context.Wait(MessageReceivedAsync);
         }
     }
 }

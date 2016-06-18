@@ -15,6 +15,8 @@ namespace ServiceBot
     [BotAuthentication]
     public class MessagesController : ApiController
     {
+        private User user = new User();
+
         /// <summary>
         /// POST: api/Messages
         /// Receive a message from a user and reply to it
@@ -23,6 +25,8 @@ namespace ServiceBot
         {
             if (message.Type == "Message")
             {
+                user.setName(message.From.Name);
+
                 // calculate something for us to return
                 int length = (message.Text ?? string.Empty).Length;
 
@@ -89,6 +93,15 @@ namespace ServiceBot
                     "Would you like to modify your profile?", //prompt to show to the user
                     "Sorry, I don't understand."); //what to show on retry
             }
+            else if (message.Text.Contains("/username"))
+            {
+                await context.PostAsync(string.Format("What would you like to change your username to?"));
+                PromptDialog.PromptString(
+                    context,
+                    UsernameChangeAsync,
+                    "What would you like to change your username to?",
+                    "Sorry, I don't understand.");
+            }
             else
             {
                 await context.PostAsync(string.Format("You said: {0}", message.Text));
@@ -96,6 +109,19 @@ namespace ServiceBot
             }
         }
         public async Task AfterResetAsync(IDialogContext context, IAwaitable<bool> argument)
+        {
+            var confirm = await argument;
+            if (confirm)
+            {
+                await context.PostAsync("What would you like to modify?");
+            }
+            else
+            {
+                await context.PostAsync("Okay, enjoy your time on the forum.");
+            }
+            context.Wait(MessageReceivedAsync);
+        }
+        public async Task UsernameChangeAsync(IDialogContext context, IAwaitable<bool> argument)
         {
             var confirm = await argument;
             if (confirm)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
 using System.Linq;
 using System.Web;
 
@@ -7,26 +8,54 @@ namespace ServiceBot
 {
     public class Database
     {
-        private SQLiteConnection sql_con;
-        private SQLiteCommand sql_cmd;
-        private SQLiteDataAdapter DB;
-        private DataSet DS = new DataSet();
-        private DataTable DT = new DataTable();
+        //Holds connection with database
+        SQLiteConnection m_dbConnection;
 
-        private void SetConnection()
+        static void Main(string[] args)
         {
-            sql_con = new SQLiteConnection
-                ("Data Source=test.db;Version=3;New=False;Compress=True;");
+            Database d = new Database();
         }
 
-        private void ExecuteQuery(string queryText)
+        public Database()
         {
-            SetConnection();
-            sql_con.Open();
-            sql_cmd = sql_con.CreateCommand();
-            sql_cmd.CommandText = queryText;
-            sql_cmd.ExecuteNonQuery();
-            sql_con.Close();
+            createNewDatabase();
+            connectToDatabase();
+            createTable();
+            fillTable();
+        }
+        
+        void createNewDatabase()
+        {
+            SQLiteConnection.CreateFile("testdb.sqlite");
+        }
+
+        //Create a connection with database file
+        void connectToDatabase()
+        {
+            m_dbConnection = new SQLiteConnection("Data Source=MyDatabase.sqlite;Version=3;");
+            m_dbConnection.Open();
+        }
+
+        //Create new table
+        void createTable()
+        {
+            string sql = "CREATE TABLE QUERY";
+            SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
+            command.ExecuteNonQuery();
+        }
+
+        //Inserts some values into table
+        void fillTable()
+        {
+            string sql = "INSERT INTO TABLE QUERY";
+            SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
+            command.ExecuteNonQuery();
+            sql = "ANOTHER INSERT INTO TABLE QUERY";
+            command = new SQLiteCommand(sql, m_dbConnection);
+            command.ExecuteNonQuery();
+            sql = "ANOTHER INSERT INTO TABLE QUERY";
+            command = new SQLiteCommand(sql, m_dbConnection);
+            command.ExecuteNonQuery();
         }
     }
 }
